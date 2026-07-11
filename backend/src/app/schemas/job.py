@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from uuid import UUID
 from typing import Any
@@ -29,8 +29,7 @@ class JobResponse(BaseModel):
     retry_count: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class JobExecutionResponse(BaseModel):
     id: UUID
@@ -43,5 +42,4 @@ class JobExecutionResponse(BaseModel):
     error_message: str | None = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

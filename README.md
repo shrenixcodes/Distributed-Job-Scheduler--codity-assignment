@@ -49,6 +49,17 @@ Frontend will be at http://localhost:5173
 docker-compose up --build
 ```
 
+### Presentation Demo Data
+
+Load a realistic XYZ App Build workspace with queues, build jobs, worker activity, and mixed job states:
+
+```bash
+cd backend
+python -m src.app.scripts.seed_demo
+```
+
+Then sign in at `http://localhost:5173` with `demo@xyzbuild.dev` and password `xyz-demo-2026`.
+
 ## Project Structure
 ```
 Distributed Job Scheduler -codity assignment/
@@ -123,4 +134,3 @@ pytest
 4. **Worker Heartbeats**: Monitor worker health for failover
 5. **Async Operations**: High-throughput with async SQLAlchemy
 6. **Security**: JWT auth, password hashing with bcrypt
-

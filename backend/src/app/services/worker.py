@@ -1,7 +1,7 @@
 
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from ..core.database import AsyncSessionLocal
@@ -60,7 +60,7 @@ class JobWorker:
         async with AsyncSessionLocal() as db:
             result = await db.execute(
                 select(Queue)
-                .where(Queue.is_paused == False)
+                .where(Queue.is_paused.is_(False))
             )
             queues = result.scalars().all()
             
@@ -73,7 +73,7 @@ class JobWorker:
             .where(
                 Job.queue_id == queue.id,
                 Job.status == "queued",
-                (Job.scheduled_at == None) | (Job.scheduled_at <= datetime.utcnow())
+                (Job.scheduled_at.is_(None)) | (Job.scheduled_at <= datetime.now(timezone.utc))
             )
             .order_by(Job.priority.desc(), Job.created_at)
             .limit(queue.concurrency_limit)
@@ -81,13 +81,20 @@ class JobWorker:
         jobs = result.scalars().all()
         
         for job in jobs:
-            job.status = "claimed"
-            job.started_at = datetime.utcnow()
+            claim_result = await db.execute(
+                update(Job)
+                .where(Job.id == job.id, Job.status == "queued")
+                .values(status="claimed", started_at=datetime.now(timezone.utc))
+            )
+            # A conditional update prevents another worker from executing the
+            # same job if it claimed it after our initial select.
+            if claim_result.rowcount != 1:
+                continue
             
             execution = JobExecution(
                 job_id=job.id,
                 worker_id=self.worker_id,
-                started_at=datetime.utcnow(),
+                started_at=datetime.now(timezone.utc),
                 status="running"
             )
             db.add(execution)
@@ -100,18 +107,18 @@ class JobWorker:
         try:
             await asyncio.sleep(1)
             execution.status = "completed"
-            execution.completed_at = datetime.utcnow()
+            execution.completed_at = datetime.now(timezone.utc)
             execution.output = {"result": "success"}
             
             job.status = "completed"
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(timezone.utc)
         except Exception as e:
             execution.status = "failed"
-            execution.completed_at = datetime.utcnow()
+            execution.completed_at = datetime.now(timezone.utc)
             execution.error_message = str(e)
             
             job.status = "failed"
-            job.failed_at = datetime.utcnow()
+            job.failed_at = datetime.now(timezone.utc)
         finally:
             await db.commit()
 

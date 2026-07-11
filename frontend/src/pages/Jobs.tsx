@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Braces, Clock3, LoaderCircle, Plus, RefreshCw } from 'lucide-react';
 import api from '../api';
 import type { Job, Queue } from '../types';

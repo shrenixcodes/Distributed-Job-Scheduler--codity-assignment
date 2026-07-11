@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { CirclePause, CirclePlay, FolderKanban, Layers3, LoaderCircle, Plus, RefreshCw } from 'lucide-react';
 import api from '../api';
 import type { Project, Queue } from '../types';
