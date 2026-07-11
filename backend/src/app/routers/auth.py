@@ -6,6 +6,7 @@ from sqlalchemy import select
 from ..core.database import get_db
 from ..core.security import get_password_hash, verify_password, create_access_token
 from ..models.user import User
+from ..models.organization import Organization, OrganizationMember
 from ..schemas.user import UserCreate, UserResponse, Token
 
 router = APIRouter()
@@ -19,6 +20,22 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     hashed_password = get_password_hash(user.password)
     db_user = User(email=user.email, hashed_password=hashed_password, full_name=user.full_name)
     db.add(db_user)
+    await db.flush()  # Get user.id
+    
+    # Create default organization for new user
+    org_name = f"{user.full_name or user.email}'s Organization"
+    db_org = Organization(name=org_name)
+    db.add(db_org)
+    await db.flush()  # Get org.id
+    
+    # Add user as admin member
+    db_member = OrganizationMember(
+        organization_id=db_org.id,
+        user_id=db_user.id,
+        role="admin"
+    )
+    db.add(db_member)
+    
     await db.commit()
     await db.refresh(db_user)
     return db_user
