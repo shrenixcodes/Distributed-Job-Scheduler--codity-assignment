@@ -1,8 +1,22 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from .routers import auth, projects, queues, jobs, workers
+from .core.database import engine, Base
+from .core.config import settings
 
-app = FastAPI(title="Distributed Job Scheduler API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create all database tables on startup
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
+app = FastAPI(
+    title="Distributed Job Scheduler API", 
+    version="0.1.0",
+    lifespan=lifespan
+)
 
 # CORS configuration (allow all for dev)
 app.add_middleware(

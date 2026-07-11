@@ -1,30 +1,38 @@
 
-# Design Decisions
+# Design Decisions & Trade-offs
 
-## 1. Database Choice: PostgreSQL
-- **Why**: Strong relational model support, JSONB for flexible payloads, ACID compliance, excellent for job scheduling systems.
-- **Trade-offs**: More complex than NoSQL options, but necessary for data integrity and relationships.
+## 1. Database Selection
+- **PostgreSQL (Prod)**: ACID compliance, JSONB support, mature for job scheduling
+- **SQLite (Dev)**: Easy to set up, no external dependencies, great for rapid prototyping
+- **Trade-off**: SQLite lacks concurrency for multi-worker setups, so use PostgreSQL for any production-like testing
 
-## 2. Backend Framework: FastAPI
-- **Why**: Async support, automatic OpenAPI docs, Pydantic for validation, excellent performance.
-- **Trade-offs**: Smaller ecosystem compared to Flask/Django, but sufficient for our needs.
+## 2. Async vs Sync Backend
+- **Chose Async (FastAPI + SQLAlchemy 2.0)**: Better throughput for I/O-bound tasks (DB calls, job scheduling)
+- **Trade-off**: Slightly more complex code, but worth it for scalability
 
-## 3. ORM: SQLAlchemy 2.0 (Async)
-- **Why**: Async support, powerful query building, ORM pattern for maintainability.
-- **Trade-offs**: Learning curve for async patterns, but necessary for scalability.
+## 3. Job Claiming
+- **Atomic DB Operation**: Use DB-level transactions to ensure only one worker claims a job
+- **Why Not Distributed Locks (Redis)**: Keeps initial architecture simple; can add Redis later if needed
+- **Trade-off**: Tighter coupling to DB, but avoids introducing another service
 
-## 4. Authentication: JWT
-- **Why**: Stateless, scalable, easy to implement with FastAPI.
-- **Trade-offs**: Token size, no built-in revocation (can be added with a token blacklist if needed).
+## 4. Password Hashing
+- **bcrypt via passlib**: Slow hashing algorithm resistant to brute-force attacks
+- **Why Not Argon2?**: bcrypt is more widely supported and still very secure for this use case
 
-## 5. Job Claiming: Atomic Database Updates
-- **Why**: Prevents duplicate job execution by using database-level atomic operations.
-- **Trade-offs**: Adds database load, but necessary for correctness.
+## 5. JWT for Auth
+- **Stateless Auth**: No server-side session storage; easy to scale horizontally
+- **Trade-off**: Tokens can't be revoked easily without a token blacklist (future improvement)
 
-## 6. Worker Liveness: Heartbeats
-- **Why**: Allows detecting failed workers and requeuing their jobs.
-- **Trade-offs**: Additional database writes, but necessary for reliability.
+## 6. Frontend State Management
+- **Local State (useState/useEffect)**: Simple for initial version; avoids over-engineering
+- **Future**: Could add React Query or SWR for better caching
 
-## 7. Frontend: React + Vite
-- **Why**: Fast development, modern tooling, excellent TypeScript support.
-- **Trade-offs**: Steeper learning curve than vanilla JS, but worth it for maintainability.
+## 7. Worker Implementation
+- **Polling (Simple)**: Workers periodically check queues for jobs
+- **Alternative**: Event-driven (Redis Pub/Sub, Postgres NOTIFY/LISTEN) for lower latency
+- **Trade-off**: Polling has slight latency, but is simple and reliable
+
+## 8. Containerization
+- **Docker Compose**: Orchestrates backend, worker, frontend, and DB in one command
+- **Why Not Kubernetes?**: Overkill for this scope, but easy to migrate later
+
