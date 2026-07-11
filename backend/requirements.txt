@@ -6,4 +6,7 @@ alembic
 python-jose[cryptography]
 passlib[bcrypt]
 pydantic
+pydantic-settings
+python-multipart
+croniter
 prometheus-client
