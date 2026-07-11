@@ -33,6 +33,7 @@ function App() {
                 <Route path="/queues" element={<Queues />} />
                 <Route path="/jobs" element={<Jobs />} />
                 <Route path="/workers" element={<Workers />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </div>
           </>

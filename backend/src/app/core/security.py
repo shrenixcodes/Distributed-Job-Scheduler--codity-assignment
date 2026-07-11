@@ -10,6 +10,7 @@ from sqlalchemy import select
 from .config import settings
 from .database import get_db
 from ..models.user import User
+from ..models.organization import OrganizationMember
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -50,3 +51,20 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         raise credentials_exception
     return user
 
+
+async def get_current_organization_id(current_user: User, db: AsyncSession) -> str:
+    """Return an organization the current user belongs to.
+
+    New accounts receive one organization during registration. Keeping the
+    lookup here lets the rest of the API enforce the same tenant boundary.
+    """
+    result = await db.execute(
+        select(OrganizationMember.organization_id)
+        .where(OrganizationMember.user_id == current_user.id)
+        .order_by(OrganizationMember.created_at)
+        .limit(1)
+    )
+    organization_id = result.scalar_one_or_none()
+    if organization_id is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No organization membership found")
+    return organization_id

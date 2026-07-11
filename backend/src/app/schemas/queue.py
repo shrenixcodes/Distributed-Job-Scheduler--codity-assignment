@@ -1,14 +1,14 @@
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import UUID
 
 class QueueCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=255)
     description: str | None = None
     project_id: UUID
-    priority: int = 0
-    concurrency_limit: int = 1
+    priority: int = Field(default=0, ge=0, le=100)
+    concurrency_limit: int = Field(default=1, ge=1, le=100)
 
 class RetryPolicyCreate(BaseModel):
     queue_id: UUID
