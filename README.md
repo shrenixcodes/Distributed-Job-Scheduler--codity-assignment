@@ -1,6 +1,6 @@
 
 # Distributed Job Scheduler
-
+Enhanced expertise in backend engineering by developing a distributed job scheduler using FastAPI, PostgreSQL, SQLAlchemy, Docker, and JWT, while implementing asynchronous processing, worker orchestration, retry policies, and scalable system design.
 ## Overview
 Production-ready distributed job scheduling system built with FastAPI, PostgreSQL (or SQLite for dev), and React. Supports priority queues, retries, dead letter queues, and more.
 
